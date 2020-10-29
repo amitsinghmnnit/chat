@@ -1,27 +1,74 @@
-<!-- chat/templates/chat/index.html -->
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8"/>
-    <title>Chat Rooms</title>
+    <title>Join Rooms</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
-    What chat room would you like to enter?<br>
-    <input id="room-name-input" type="text" size="100"><br>
-    <input id="room-name-submit" type="button" value="Enter">
+   <div class=" mt-5 row row-cols-1 row-cols-md-2" >
+  <div class="col mb-4">
+    <div class="card">
+      <div class="card-body">
+          <h5 class="card-title" ><h2 style="text-align:center;">Join Room</h2></h5>
+          <h4>Room Name:</h4><input id="jn-nm" type="text" size="45" placeholder="Enter room name" required><br>
+          <h4>Room Password:</h4><input id="jn-pw" type="text" size="45" placeholder="Enter room password" required><br><br>
+          <input id="jn-sb" class="btn btn-success" type="button" value="Enter">
+      </div>
+    </div>
+  </div>
+  <div class="col mb-4">
+    <div class="card">
+      <div class="card-body">
+          <h5 class="card-title" ><h2 style="text-align:center;">Create Link</h2></h5>
+          <h4>Room Name:</h4><input id="cr-nm" type="text" size="45" placeholder="Enter room name" required><br>
+          <h4>Room Password:</h4><input id="cr-pw" type="text" size="45" placeholder="Enter room password" required><br><br>
+          <input id="cr-sb" class="btn btn-success" type="button" value="Enter">
+          <p id="demo" > </p>
+
+      </div>
+    </div>
+  </div>
+</div>
 
     <script>
-        document.querySelector('#room-name-input').focus();
-        document.querySelector('#room-name-input').onkeyup = function(e) {
+        document.querySelector('#cr-nm').focus();
+        document.querySelector('#cr-nm').onkeyup = function(e) {
             if (e.keyCode === 13) {  // enter, return
-                document.querySelector('#room-name-submit').click();
+                document.querySelector('#cr-pw').focus();
+                document.querySelector('#cr-pw').onkeyup = function(e) {
+                    if (e.keyCode === 13){
+                        document.querySelector('#cr-sb').click();
+                    }
+                }
             }
         };
+        document.querySelector('#cr-sb').onclick = function(e) {
+                document.getElementById('demo').innerHTML =
+                "<h3> Room's Link is :  </h3>" + window.location.href;
+        }
 
-        document.querySelector('#room-name-submit').onclick = function(e) {
-            var roomName = document.querySelector('#room-name-input').value;
-            window.location.pathname = '/chat/' + roomName + '/';
+        document.querySelector('#jn-nm').focus();
+        document.querySelector('#jn-nm').onkeyup = function(e) {
+            if (e.keyCode === 13) {  // enter, return
+                document.querySelector('#jn-pw').focus();
+                document.querySelector('#jn-pw').onkeyup = function(e) {
+                    if (e.keyCode === 13){
+                        document.querySelector('#jn-sb').click();
+                    }
+                }
+            }
         };
+         document.querySelector('#jn-sb').onclick = function(e) {
+            var roomName = document.querySelector('#jn-nm').value;
+            var roomPass = document.querySelector('#jn-pw').value;
+            roomName+=roomPass;
+            window.location.pathname = '/room/' + roomName + '/';
+        }
+
     </script>
+   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css" integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous">
+   <script src="https://code.jquery.cosm/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+   <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ho+j7jyWK8fNQe+A12Hb8AhRq26LrZ/JpcUGGOn+Y7RsweNrtN/tE3MoK7ZeZDyx" crossorigin="anonymous"></script>
 </body>
 </html>

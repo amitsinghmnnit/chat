@@ -1,49 +1,287 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-    <meta charset="utf-8"/>
+    <meta charset="utf-8" />
     <title>Chat Room</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        /* Create two unequal columns that floats next to each other */
+        .column {
+            float: left;
+            padding: 10px;
+            height: 1000px;
+            /* Should be removed. Only for demonstration */
+        }
+
+        .left {
+            width: 75%;
+        }
+
+        .right {
+            width: 25%;
+        }
+
+        /* Clear floats after the columns */
+        .row:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/codemirror.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/codemirror.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/mode/python/python.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/theme/ayu-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.58.1/addon/edit/closebrackets.min.js"></script>
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.5/jquery.min.js"></script>
+
 </head>
+
 <body>
-    <textarea id="chat-log" cols="100" rows="20"></textarea><br>
-    <input id="chat-message-input" type="text" size="100"><br>
-    <input id="chat-message-submit" type="button" value="Send">
-    {{ room_name|json_script:"room-name" }}
-    <script>
-        const roomName = JSON.parse(document.getElementById('room-name').textContent);
 
-        const chatSocket = new WebSocket(
-            'ws://'
-            + window.location.host
-            + '/ws/chat/'
-            + roomName
-            + '/'
-        );
+    <div class="row">
+        <div class="column left" style="background-color:#aaa;">
+            <div class="grid-container">
 
-        chatSocket.onmessage = function(e) {
-            const data = JSON.parse(e.data);
-            document.querySelector('#chat-log').value += (data.message + '\n');
-        };
+                <div class="grid-item">
+                    <h3>CODE EDITOR</h3>
+                    <textarea id="editor" cols="88" rows="20" placeholder="Enter your code here"></textarea><br>
+                    <input type="button" onclick="myFunction1()" value="COMPILE">
+                    <input type="button" onclick="myFunction2()" value="RUN">
 
-        chatSocket.onclose = function(e) {
-            console.error('Chat socket closed unexpectedly');
-        };
+                    <h4>OUTPUT</h4>
+                    <textarea rows="4" cols="50" id="output" placeholder="Your output will be shown here."></textarea>
+                </div>
 
-        document.querySelector('#chat-message-input').focus();
-        document.querySelector('#chat-message-input').onkeyup = function(e) {
-           if (e.keyCode === 13 ) {  // enter, return
-                document.querySelector('#chat-message-submit').click();
-            }
-        };
+                <div class="grid-item">
+                    <h3>CHAT</h3>
+                    <textarea id="chat-log" cols=85 rows=18></textarea><br>
+                    <input id="chat-message-input" type="text" size="50" placeholder="Enter your message here"><br>
+                    <input id="chat-message-submit" type="button" value="Send">
+                    {{ room_name|json_script:"room-name" }}
+                </div>
+            </div>
+            <p id="check"></p>
+            <script>
+                const roomName = JSON.parse(document.getElementById('room-name').textContent);
 
-        document.querySelector('#chat-message-submit').onclick = function(e) {
-            const messageInputDom = document.querySelector('#chat-message-input');
-            const message = messageInputDom.value;
-            chatSocket.send(JSON.stringify({
-                'message': message
-            }));
-            messageInputDom.value = '';
-        };
-    </script>
+                const chatSocket = new WebSocket(
+                    'ws://'
+                    + window.location.host
+                    + '/ws/room/'
+                    + roomName
+                    + '/'
+                );
+
+                chatSocket.onmessage = function (e) {
+                    const data = JSON.parse(e.data);
+                    var str = data.message;
+                    var res = str.charAt(str.length - 1);
+                    str = str.substring(0, str.length - 1);
+                    if (res == '#') {
+                        document.querySelector('#chat-log').value += (str + '\n');
+                    }
+                    else if (res == '$') {
+                        document.querySelector('#editor').value = '';
+                        document.querySelector('#editor').value = str;
+                    }
+                    else if (res == '&') {
+                        document.querySelector('#output').value = '';
+                        document.querySelector('#output').value = str;
+                    }
+                };
+
+                chatSocket.onclose = function (e) {
+                    console.error('Chat socket closed unexpectedly');
+                };
+
+
+                document.querySelector('#chat-message-input').onkeyup = function (e) {
+                    if (e.keyCode === 13) {  // enter, return
+                        document.querySelector('#chat-message-submit').click();
+                    }
+                };
+
+                document.querySelector('#editor').onkeyup = function (e) {
+                    document.querySelector('#editor').click();
+                };
+
+
+                document.querySelector('#chat-message-submit').onclick = function (e) {
+                    const messageInputDom = document.querySelector('#chat-message-input');
+                    var message = messageInputDom.value;
+                    message = message + "#";
+                    chatSocket.send(JSON.stringify({
+                        'message': message
+                    }));
+                    messageInputDom.value = '';
+                };
+                document.querySelector('#editor').onclick = function (e) {
+                    const messageInputDom = document.querySelector('#editor');
+                    var message = messageInputDom.value;
+                    message = message + "$";
+                    chatSocket.send(JSON.stringify({
+                        'message': message
+                    }));
+
+                };
+            </script>
+            <script>
+                function myFunction1() {
+< !--{ % csrf_token %} -->
+                    var text = document.querySelector('#editor').value;
+                var formData = { source: text, lang: "PYTHON3" };
+                $.ajax({
+                    url: "{% url 'compile' %}",
+                    type: "POST",
+                    data: formData,
+                    success: function (data, textStatus, jqXHR) {
+                        res = JSON.stringify(data['compile_status']);
+                        const message = res + "&";
+                        chatSocket.send(JSON.stringify({
+                            'message': message
+                        }));
+                    },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        alert(errorThrown);
+                    }
+                });
+
+                }
+
+                function myFunction2() {
+
+< !--{ % csrf_token %} -->
+                    var text = document.querySelector('#editor').value;
+                var formData = { source: text, lang: "PYTHON3" };
+                $.ajax({
+                    url: "{% url 'run' %}",
+                    type: "POST",
+                    data: formData,
+                    success: function (data, textStatus, jqXHR) {
+                        res = JSON.stringify(data['run_status']['output']);
+                        const message = res + "&";
+                        chatSocket.send(JSON.stringify({
+                            'message': message
+                        }));
+
+                    },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        alert(errorThrown);
+                    }
+                });
+
+                }
+
+
+            </script>
+        </div>
+        <div class="column right" style="background-color:rgb(236, 179, 255);">
+            <div class="container my-3">
+                <h1>Make Notes</h1>
+                <div class="card">
+                    <div class="card-body">
+                        <div class="form-group">
+                            <h5 class="card-title">Add title</h5>
+                            <input type="text" class="form-control" id="addTitle" aria-describedby="title"
+                                placeholder="Enter title">
+                        </div>
+                        <h5 class="card-title">Add a note</h5>
+                        <div class="form-group">
+                            <textarea class="form-control" id="addTxt" rows="3"></textarea>
+                        </div>
+                        <button class="btn btn-primary" id="addBtn">Add Note</button>
+                    </div>
+                </div>
+                <hr>
+                <h1>Your Notes</h1>
+                <hr>
+                <div id="notes" class="row container-fluid"> </div>
+            </div>
+            <script>
+                showNotes();
+
+                // If user adds a note, add it to the localStorage
+                let addBtn = document.getElementById("addBtn");
+                addBtn.addEventListener("click", function (e) {
+                    let addTxt = document.getElementById("addTxt");
+                    let addTitle = document.getElementById("addTitle");
+                    let notes = localStorage.getItem("notes");
+                    if (notes == null) {
+                        notesObj = [];
+                    } else {
+                        notesObj = JSON.parse(notes);
+                    }
+                    let myObj = {
+                        title: addTitle.value,
+                        text: addTxt.value
+                    }
+                    notesObj.push(myObj);
+                    localStorage.setItem("notes", JSON.stringify(notesObj));
+                    addTxt.value = "";
+                    addTitle.value = "";
+                    //   console.log(notesObj);
+                    showNotes();
+                });
+
+                // Function to show elements from localStorage
+                function showNotes() {
+                    let notes = localStorage.getItem("notes");
+                    if (notes == null) {
+                        notesObj = [];
+                    } else {
+                        notesObj = JSON.parse(notes);
+                    }
+                    let html = "";
+                    notesObj.forEach(function (element, index) {
+                        html += `
+            <div class="noteCard my-2 mx-2 card" style="width: 18rem;">
+                    <div class="card-body">
+                        <h5 class="card-title">${element.title}</h5>
+                        <p class="card-text"> ${element.text}</p>
+                        <button id="${index}"onclick="deleteNote(this.id)" class="btn btn-primary">Delete Note</button>
+                    </div>
+                </div>`;
+                    });
+                    let notesElm = document.getElementById("notes");
+                    if (notesObj.length != 0) {
+                        notesElm.innerHTML = html;
+                    } else {
+                        notesElm.innerHTML = `Nothing to show! Add some Note`;
+                    }
+                }
+
+                // Function to delete a note
+                function deleteNote(index) {
+                    //   console.log("I am deleting", index);
+
+                    let notes = localStorage.getItem("notes");
+                    if (notes == null) {
+                        notesObj = [];
+                    } else {
+                        notesObj = JSON.parse(notes);
+                    }
+
+                    notesObj.splice(index, 1);
+                    localStorage.setItem("notes", JSON.stringify(notesObj));
+                    showNotes();
+                }
+            </script>
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+        integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+        crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+        integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+        integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+        crossorigin="anonymous"></script>
 </body>
+
 </html>
